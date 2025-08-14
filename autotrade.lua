@@ -17,109 +17,140 @@ local function antiAFK()
 		task.wait(1) -- Thực hiện mỗi 30 giây, có thể thay đổi
 	end
 end
-
-task.spawn(antiAFK)
-
 local function setupUI()
-	pcall(function()
-		game:GetService("StarterGui"):SetCore("TopbarEnabled", false)
-	end)
+    pcall(function()
+        game:GetService("StarterGui"):SetCore("TopbarEnabled", false)
+    end)
 
-	local screenGui = Instance.new("ScreenGui")
-	screenGui.Name = "SimpleDinoUI"
-	screenGui.ResetOnSpawn = false
-	screenGui.IgnoreGuiInset = true
-	screenGui.Parent = player:WaitForChild("PlayerGui")
-	screenGui.DisplayOrder = 2147483647
-	screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "SimpleDinoUI"
+    screenGui.ResetOnSpawn = false
+    screenGui.IgnoreGuiInset = true
+    screenGui.Parent = player:WaitForChild("PlayerGui")
+    screenGui.DisplayOrder = 2147483647
+    screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
-	local bgFrame = Instance.new("Frame")
-	bgFrame.Size = UDim2.new(1, 0, 1, 0)
-	bgFrame.BackgroundColor3 = Color3.new(0, 0, 0)
-	bgFrame.BackgroundTransparency = 1
-	bgFrame.BorderSizePixel = 0
-	bgFrame.Parent = screenGui
+    local bgFrame = Instance.new("Frame")
+    bgFrame.Size = UDim2.new(1, 0, 1, 0)
+    bgFrame.BackgroundColor3 = Color3.new(0, 0, 0)
+    bgFrame.BackgroundTransparency = 1
+    bgFrame.BorderSizePixel = 0
+    bgFrame.Parent = screenGui
 
-	local layout = Instance.new("UIListLayout")
-	layout.Padding = UDim.new(0, 8)
-	layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-	layout.VerticalAlignment = Enum.VerticalAlignment.Top
-	layout.SortOrder = Enum.SortOrder.LayoutOrder
-	layout.Parent = bgFrame
+    local layout = Instance.new("UIListLayout")
+    layout.Padding = UDim.new(0, 8)
+    layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    layout.VerticalAlignment = Enum.VerticalAlignment.Top
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout.Parent = bgFrame
 
-	local padding = Instance.new("UIPadding")
-	padding.PaddingTop = UDim.new(0, 10)
-	padding.Parent = bgFrame
+    local padding = Instance.new("UIPadding")
+    padding.PaddingTop = UDim.new(0, 10)
+    padding.Parent = bgFrame
 
-	-- Discord Label
-	local discordLabel = Instance.new("TextLabel")
-	discordLabel.Name = "Discord"
-	discordLabel.Size = UDim2.new(1, -60, 0, 60)
-	discordLabel.BackgroundTransparency = 1
-	discordLabel.Font = Enum.Font.GothamBlack
-	discordLabel.TextScaled = true
-	discordLabel.TextColor3 = Color3.new(1, 1, 1)
-	discordLabel.Text = "discord.gg/chings"
-	discordLabel.Parent = bgFrame
+    -- Discord Label
+    local discordLabel = Instance.new("TextLabel")
+    discordLabel.Name = "Discord"
+    discordLabel.Size = UDim2.new(1, -60, 0, 60)
+    discordLabel.BackgroundTransparency = 1
+    discordLabel.Font = Enum.Font.GothamBlack
+    discordLabel.TextScaled = true
+    discordLabel.TextColor3 = Color3.new(1, 1, 1)
+    discordLabel.Text = "discord.gg/chings"
+    discordLabel.Parent = bgFrame
 
-	local gradient = Instance.new("UIGradient")
-	gradient.Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(114, 137, 218)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 100, 150))
-	})
-	gradient.Parent = discordLabel
+    local gradient = Instance.new("UIGradient")
+    gradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(114, 137, 218)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 100, 150))
+    })
+    gradient.Parent = discordLabel
 
-	-- Player Name Label
-	local playerLabel = Instance.new("TextLabel")
-	playerLabel.Name = "PlayerName"
-	playerLabel.Size = UDim2.new(1, -60, 0, 50)
-	playerLabel.BackgroundTransparency = 1
-	playerLabel.Font = Enum.Font.GothamBold
-	playerLabel.TextScaled = true
-	playerLabel.TextColor3 = Color3.fromRGB(200, 255, 200)
-	playerLabel.Text = "👤 Player: " .. player.Name
-	playerLabel.Parent = bgFrame
+    -- Player Name Label
+    local playerLabel = Instance.new("TextLabel")
+    playerLabel.Name = "PlayerName"
+    playerLabel.Size = UDim2.new(1, -60, 0, 50)
+    playerLabel.BackgroundTransparency = 1
+    playerLabel.Font = Enum.Font.GothamBold
+    playerLabel.TextScaled = true
+    playerLabel.TextColor3 = Color3.fromRGB(200, 255, 200)
+    playerLabel.Text = "👤 Player: " .. player.Name
+    playerLabel.Parent = bgFrame
 
-	-- Auto Trade Label
-	local tradeLabel = Instance.new("TextLabel")
-	tradeLabel.Name = "AutoTrade"
-	tradeLabel.Size = UDim2.new(1, -70, 0, 70)
-	tradeLabel.BackgroundTransparency = 1
-	tradeLabel.Font = Enum.Font.GothamBold
-	tradeLabel.TextScaled = true
-	tradeLabel.TextColor3 = Color3.fromRGB(255, 255, 100)
-	tradeLabel.Text = "AUTO TRADE"
-	tradeLabel.Parent = bgFrame
+    -- Auto Trade Label
+    local tradeLabel = Instance.new("TextLabel")
+    tradeLabel.Name = "AutoTrade"
+    tradeLabel.Size = UDim2.new(1, -70, 0, 70)
+    tradeLabel.BackgroundTransparency = 1
+    tradeLabel.Font = Enum.Font.GothamBold
+    tradeLabel.TextScaled = true
+    tradeLabel.TextColor3 = Color3.fromRGB(255, 255, 100)
+    tradeLabel.Text = "AUTO TRADE"
+    tradeLabel.Parent = bgFrame
 
-	-- Line Above Status
-	local lineTop = Instance.new("Frame")
-	lineTop.Size = UDim2.new(1, -80, 0, 2)
-	lineTop.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	lineTop.BorderSizePixel = 0
-	lineTop.Parent = bgFrame
+    -- Line Above Status
+    local lineTop = Instance.new("Frame")
+    lineTop.Size = UDim2.new(1, -80, 0, 2)
+    lineTop.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    lineTop.BorderSizePixel = 0
+    lineTop.Parent = bgFrame
 
-	-- Status Label
-	local statusLabel = Instance.new("TextLabel")
-	statusLabel.Name = "Status"
-	statusLabel.Size = UDim2.new(1, -60, 0, 50)
-	statusLabel.BackgroundTransparency = 1
-	statusLabel.Font = Enum.Font.Gotham
-	statusLabel.TextScaled = true
-	statusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	statusLabel.Text = "Status: Idle"
-	statusLabel.Parent = bgFrame
+    -- Pet Count Label
+    local petCountLabel = Instance.new("TextLabel")
+    petCountLabel.Name = "PetCount"
+    petCountLabel.Size = UDim2.new(1, -60, 0, 50)
+    petCountLabel.BackgroundTransparency = 1
+    petCountLabel.Font = Enum.Font.Gotham
+    petCountLabel.TextScaled = true
+    petCountLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+    petCountLabel.Text = "Pets: 0"
+    petCountLabel.Parent = bgFrame
+    _G.PetCountLabel = petCountLabel
 
-	-- Line Below Status
-	local lineBottom = Instance.new("Frame")
-	lineBottom.Size = UDim2.new(1, -80, 0, 2)
-	lineBottom.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	lineBottom.BorderSizePixel = 0
-	lineBottom.Parent = bgFrame
+    -- Status Label
+    local statusLabel = Instance.new("TextLabel")
+    statusLabel.Name = "Status"
+    statusLabel.Size = UDim2.new(1, -60, 0, 50)
+    statusLabel.BackgroundTransparency = 1
+    statusLabel.Font = Enum.Font.Gotham
+    statusLabel.TextScaled = true
+    statusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    statusLabel.Text = "Status: Idle"
+    statusLabel.Parent = bgFrame
     _G.StatusLabel = statusLabel
 
+    -- Line Below Status
+    local lineBottom = Instance.new("Frame")
+    lineBottom.Size = UDim2.new(1, -80, 0, 2)
+    lineBottom.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    lineBottom.BorderSizePixel = 0
+    lineBottom.Parent = bgFrame
+end
+
+-- Function to count pets in backpack
+local function countPets()
+    local count = 0
+    for _, item in ipairs(Backpack:GetChildren()) do
+        if item:IsA("Tool") and string.find(item.Name, "KG") and string.find(item.Name, "Age") then
+            count = count + 1
+        end
+    end
+    return count
+end
+
+-- Function to update pet count display
+local function updatePetCount()
+    while true do
+        local petCount = countPets()
+        if _G.PetCountLabel then
+            _G.PetCountLabel.Text = "Pets: " .. tostring(petCount)
+        end
+        task.wait(1) -- Update every second
+    end
 end
 
 setupUI()
+task.spawn(updatePetCount)
 task.wait(1)
 _G.StatusLabel.Text = "Status: Suck my dick"
 
