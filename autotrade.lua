@@ -95,17 +95,21 @@ local function setupUI()
     lineTop.BorderSizePixel = 0
     lineTop.Parent = bgFrame
 
-    -- Pet Count Label
+    -- Pet Count Label tách ra ngoài
     local petCountLabel = Instance.new("TextLabel")
     petCountLabel.Name = "PetCount"
-    petCountLabel.Size = UDim2.new(1, -60, 0, 50)
-    petCountLabel.BackgroundTransparency = 1
+    petCountLabel.Size = UDim2.new(0, 150, 0, 50)  -- Kích thước tùy chỉnh
+    petCountLabel.Position = UDim2.new(1, -160, 0, 10)  -- Góc trên phải, cách viền 10px
+    petCountLabel.BackgroundTransparency = 0.5
+    petCountLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    petCountLabel.BorderSizePixel = 0
     petCountLabel.Font = Enum.Font.Gotham
     petCountLabel.TextScaled = true
     petCountLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
-    petCountLabel.Text = "Pets: 0"
-    petCountLabel.Parent = bgFrame
+    petCountLabel.Text = "Pets: Loading..."
+    petCountLabel.Parent = screenGui  -- <-- Đặt parent trực tiếp là screenGui
     _G.PetCountLabel = petCountLabel
+
 
     -- Status Label
     local statusLabel = Instance.new("TextLabel")
@@ -128,20 +132,34 @@ local function setupUI()
 end
 
 -- Function to count pets in backpack
-local function countPets()
-    local count = 0
+-- Hàm đếm tất cả pet trong Backpack và Character
+local function countAllPets()
+    local total = 0
+    
+    -- Đếm trong Backpack
     for _, item in ipairs(Backpack:GetChildren()) do
         if item:IsA("Tool") and string.find(item.Name, "KG") and string.find(item.Name, "Age") then
-            count = count + 1
+            total += 1
         end
     end
-    return count
+
+    -- Đếm trong Character (đang cầm)
+    if LocalPlayer.Character then
+        for _, item in ipairs(LocalPlayer.Character:GetChildren()) do
+            if item:IsA("Tool") and string.find(item.Name, "KG") and string.find(item.Name, "Age") then
+                total += 1
+            end
+        end
+    end
+
+    return total
 end
+
 
 -- Function to update pet count display
 local function updatePetCount()
     while true do
-        local petCount = countPets()
+        local petCount = countAllPets()
         if _G.PetCountLabel then
             _G.PetCountLabel.Text = "Pets: " .. tostring(petCount)
         end
@@ -213,17 +231,12 @@ if LocalPlayer.Name == receiver then
 	-- Tự đá nếu đủ 60 pet
 	task.spawn(function()
 		while true do
-			local count = 0
-			for _, item in ipairs(Backpack:GetChildren()) do
-				if item:IsA("Tool") and string.find(item.Name, "KG") and string.find(item.Name, "Age") then
-					count += 1
-				end
-			end
-			if count >= 60 then
-				print("❌ Full Pet!")
-				LocalPlayer:Kick("Full Pet!")
-				break
-			end
+            local count = countAllPets()
+            if count >= 60 then
+                print("❌ Full Pet!")
+                LocalPlayer:Kick("Full Pet!")
+                break
+            end
 			task.wait(2)
 		end
 	end)
