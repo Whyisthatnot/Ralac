@@ -100,7 +100,7 @@ local function setupUI()
     petCountLabel.Name = "PetCount"
     petCountLabel.Size = UDim2.new(0, 150, 0, 50)  -- Kích thước tùy chỉnh
     petCountLabel.Position = UDim2.new(1, -160, 0, 10)  -- Góc trên phải, cách viền 10px
-    petCountLabel.BackgroundTransparency = 0.5
+    petCountLabel.BackgroundTransparency = 1
     petCountLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     petCountLabel.BorderSizePixel = 0
     petCountLabel.Font = Enum.Font.Gotham
@@ -272,6 +272,8 @@ else
 					end
 
 					task.wait(1)
+                else 
+                    found = false
 				end
 			end
 
