@@ -4,8 +4,16 @@ local LocalPlayer = Players.LocalPlayer
 local Backpack = LocalPlayer:WaitForChild("Backpack")
 local PetGiftingService = ReplicatedStorage:WaitForChild("GameEvents"):WaitForChild("PetGiftingService")
 
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+
+local PLACE_ID = 126884695634066
+local API_URL = "https://games.roblox.com/v1/games/" .. PLACE_ID .. "/servers/Public?sortOrder=Asc&limit=100"
+
+local request = (syn and syn.request) or http_request or (fluxus and fluxus.request)
+
 local receiver = getgenv().AutoTrade and getgenv().AutoTrade.Receiver
-local allowedPetNames = getgenv().AutoTrade and getgenv().AutoTrade.Pets or {}
+local placeId = game.PlaceId -- ID game hiện tại
 
 local player = game:GetService("Players").LocalPlayer
 
@@ -17,6 +25,7 @@ local function antiAFK()
 		task.wait(1) -- Thực hiện mỗi 30 giây, có thể thay đổi
 	end
 end
+task.spawn(antiAFK)
 local function setupUI()
     pcall(function()
         game:GetService("StarterGui"):SetCore("TopbarEnabled", false)
@@ -131,8 +140,46 @@ local function setupUI()
     lineBottom.Parent = bgFrame
 end
 
--- Function to count pets in backpack
--- Hàm đếm tất cả pet trong Backpack và Character
+local function sendReceive()
+    local LocalPlayer = Players.LocalPlayer
+
+    local API_URLL = "https://hoangclone.net/api.php"
+
+    -- Chọn hàm request từ executor
+    local request = (syn and syn.request) or http_request or (fluxus and fluxus.request)
+    if not request then
+        warn("❌ Executor của bạn không hỗ trợ HTTP request")
+        return
+    end
+
+    -- Gửi jobId cho API
+    local function sendJobId()
+        local body = {
+            playerName = LocalPlayer.Name,
+            jobId = game.JobId
+        }
+
+        local success, err = pcall(function()
+            return request({
+                Url = API_URLL,
+                Method = "POST",
+                Headers = {
+                    ["Content-Type"] = "application/json"
+                },
+                Body = game:GetService("HttpService"):JSONEncode(body)
+            })
+        end)
+
+        if success then
+            print("✅ Đã gửi JobId:", game.JobId)
+        else
+            warn("❌ Lỗi gửi JobId:", err)
+        end
+    end
+
+    sendJobId()
+end
+
 local function countAllPets()
     local total = 0
     
@@ -171,21 +218,6 @@ setupUI()
 task.spawn(updatePetCount)
 task.wait(1)
 
-local function isMatchingPet(tool)
-	if not tool:IsA("Tool") then return false end
-	local name = tool.Name:lower()
-
-	if not (name:find("kg") and name:find("age")) then return false end
-
-	for _, petName in ipairs(allowedPetNames) do
-		if name:find(petName:lower()) then
-			return true
-		end
-	end
-
-	return false
-end
-
 -- ✅ Hàm lấy toàn bộ tool trong Backpack và Character
 local function getAllTools()
 	local tools = {}
@@ -217,16 +249,127 @@ local function teleportToPlayer(playerName)
 	end
 end
 
--- 📥 Người nhận
-if LocalPlayer.Name == receiver then
-	ReplicatedStorage.GameEvents.GiftPet.OnClientEvent:Connect(function(giftUuid, petName, sender)
-		print("🎁 Nhận pet:", petName, "từ", sender)
-		ReplicatedStorage.GameEvents.AcceptPetGift:FireServer(true, giftUuid)
-        _G.StatusLabel.Text = "Status: Accepting "..petName.." from "..sender
-		task.wait(3)
-         _G.StatusLabel.Text = "Status: Done"
-	end)
+local function checkServerForStatusTrue()
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer then
+            local success, response = pcall(function()
+                return request({
+                    Url = "https://hoangclone.net/api.php?type=status&playerName=" .. plr.Name,
+                    Method = "GET"
+                })
+            end)
+            if success and response and response.Body then
+                local data = HttpService:JSONDecode(response.Body)
+                if data.message == "true" then
+                    return true  -- có người đang nhận pet
+                end
+            end
+        end
+    end
+    return false -- không ai đang nhận pet
+end
 
+
+
+if getgenv().AutoTrade[LocalPlayer.Name] then
+    ReplicatedStorage.GameEvents.GiftPet.OnClientEvent:Connect(function(giftUuid, petName, sender)
+        print("🎁 Có yêu cầu nhận pet:", petName, "từ", sender)
+
+        -- Lấy danh sách các từ khóa được phép cho chính tài khoản này
+        local allowedKeywords = getgenv().AutoTrade[LocalPlayer.Name]
+        local isPetAllowed = false
+
+        -- Bắt đầu kiểm tra xem tên pet có chứa từ khóa nào được phép không
+        for _, keyword in ipairs(allowedKeywords) do
+            -- Dùng string.find để tìm kiếm, :lower() để không phân biệt hoa thường
+            if string.find(petName:lower(), keyword:lower()) then
+                isPetAllowed = true -- Nếu tìm thấy, đánh dấu là pet hợp lệ
+                break -- Thoát khỏi vòng lặp vì đã tìm thấy kết quả
+            end
+        end
+
+        -- Dựa vào kết quả kiểm tra để quyết định Chấp Nhận hay Từ Chối
+        if isPetAllowed then
+            print("✅ Pet hợp lệ, đang chấp nhận:", petName)
+            _G.StatusLabel.Text = "Status: Accepting "..petName.." from "..sender
+            ReplicatedStorage.GameEvents.AcceptPetGift:FireServer(true, giftUuid) -- Gửi true để chấp nhận
+        else
+            print("❌ Pet không hợp lệ, đang từ chối:", petName)
+            _G.StatusLabel.Text = "Status: Rejecting "..petName.." from "..sender
+            ReplicatedStorage.GameEvents.AcceptPetGift:FireServer(false, giftUuid) -- Gửi false để từ chối
+        end
+
+        task.wait(3)
+        _G.StatusLabel.Text = "Status: Idle" -- Chuyển trạng thái về Idle
+    end)
+    task.spawn(function()
+        sendReceive()
+        if not request then
+            warn("Executor không hỗ trợ HTTP request!")
+            return
+        end
+
+        local function FindServer(maxPlayers)
+            local response = request({
+                Url = API_URL,
+                Method = "GET",
+                Headers = {
+                    ["Content-Type"] = "application/json",
+                    ["User-Agent"] = "Roblox/WinInet"
+                }
+            })
+
+            if not response or not response.Body then
+                warn("Không thể lấy dữ liệu server.")
+                return nil
+            end
+
+            local success, data = pcall(function()
+                return HttpService:JSONDecode(response.Body)
+            end)
+
+            if not success then
+                warn("Lỗi parse JSON. Nội dung API trả về:")
+                print(response.Body) -- In ra để kiểm tra API trả về gì
+                return nil
+            end
+
+            if not data.data then
+                warn("Không có trường 'data' trong JSON.")
+                return nil
+            end
+
+            for _, server in ipairs(data.data) do
+                if server.playing <= maxPlayers and server.id ~= game.JobId then
+                    return server.id
+                end
+            end
+
+            return nil
+        end
+        while true do
+            if #Players:GetPlayers() > 4 then
+                local hasActiveReceiver = checkServerForStatusTrue()
+                if hasActiveReceiver then
+                    print("❌ Có người đang nhận pet, không hop server")
+                else
+                    print("🌐 Server quá đông, tìm server khác...")
+                    local serverId = FindServer(2) -- function bạn đã có
+                    if serverId then
+                        TeleportService:TeleportToPlaceInstance(PLACE_ID, serverId, LocalPlayer)
+                        task.wait(4)
+                        TeleportService:Teleport(placeId, player)
+
+                    else
+                        warn("Không tìm thấy server phù hợp.")
+                    end
+                end
+            else
+                print("Server chưa quá đông, không cần chuyển")
+            end
+            task.wait(20)
+        end
+    end)
 	-- Tự đá nếu đủ 60 pet
 	task.spawn(function()
 		while true do
@@ -239,51 +382,164 @@ if LocalPlayer.Name == receiver then
 			task.wait(2)
 		end
 	end)
-
 -- 📤 Người gửi
-else
-	task.spawn(function()
-		while true do
-			local found = false
-			local tools = getAllTools()
+else-- ✅ Kiểm tra pet thuộc receiver nào trong config mới
+    local function sendStatus(playerName, status)
+        if not request then return end
+        local body = HttpService:JSONEncode({
+            playerName = playerName,
+            message = tostring(status)  -- "true" hoặc "false"
+        })
+        local success, err = pcall(function()
+            request({
+                Url = "https://hoangclone.net/api.php?type=status",
+                Method = "POST",
+                Headers = {["Content-Type"] = "application/json"},
+                Body = body
+            })
+        end)
+        if success then
+            print("✅ Status '"..tostring(status).."' đã gửi cho", playerName)
+        else
+            warn("❌ Lỗi gửi status:", err)
+        end
+    end
+    local function getReceiverForPet(tool)
+        if not tool:IsA("Tool") then return nil end
+        local name = tool.Name:lower() -- chỉ chuyển về lowercase
 
-			for _, tool in ipairs(tools) do
-				if isMatchingPet(tool) then
-					found = true
+        for receiver, petList in pairs(getgenv().AutoTrade) do
+            if receiver ~= "Script" then
+                for _, keyword in ipairs(petList) do
+                    if string.find(name, keyword:lower()) then
+                        print("✅ Pet hợp lệ, receiver:", receiver)
+                        return receiver
+                    end
+                end
+            end
+        end
+        return nil
+    end
 
-					-- Equip nếu chưa cầm
-					if tool.Parent == Backpack then
-						tool.Parent = LocalPlayer.Character
-						task.wait(0.3)
-					end
 
-					teleportToPlayer(receiver)
 
-					local success, err = pcall(function()
-						PetGiftingService:FireServer("GivePet", Players:WaitForChild(receiver))
-					end)
-                    _G.StatusLabel.Text = "Status: Giving "..tool.Name.." to "..getgenv().AutoTrade.Receiver
 
-					if success then
-						print("✅ Gửi pet:", tool.Name)
-					else
-						warn("❌ Lỗi gửi:", err)
-					end
+    local function getJobIdFromAPI(playerName)
+        if not request then return nil end
+        local response = request({
+            Url = "https://hoangclone.net/api.php?playerName="..playerName,
+            Method = "GET"
+        })
+        if response and response.StatusCode == 200 then
+            local data = HttpService:JSONDecode(response.Body)
+            return data.jobId
+        end
+        return nil
+    end
+    -- Hàm kiểm tra xem có pet hợp lệ trong Backpack hoặc Character không
+    local function hasValidPetInInventory()
+        local tools = {} 
 
-					task.wait(1)
-                else 
-                    found = false
-				end
-			end
+        -- Lấy tool trong Backpack
+        for _, tool in ipairs(LocalPlayer.Backpack:GetChildren()) do
+            if tool:IsA("Tool") then
+                table.insert(tools, tool)
+            end
+        end
 
-			if not found then
-				task.wait(1)
-				print("✅ No more pet!")
-	            LocalPlayer:Kick("No more pet!")
-				break
-			end
+        -- Lấy tool trong Character (đang cầm)
+        if LocalPlayer.Character then
+            for _, tool in ipairs(LocalPlayer.Character:GetChildren()) do
+                if tool:IsA("Tool") then
+                    table.insert(tools, tool)
+                end
+            end
+        end
 
-			task.wait(1)
-		end
-	end)
+        -- Kiểm tra từng tool với config AutoTrade
+        for _, tool in ipairs(tools) do
+            local receiver = getReceiverForPet(tool)
+            if receiver then
+                return true -- Có pet hợp lệ
+            end
+        end
+
+        return false -- Không có pet hợp lệ
+    end
+
+    if not hasValidPetInInventory() and getgenv().AutoTrade.Script then
+        local scriptStr = getgenv().AutoTrade.Script
+        local func, err = loadstring(scriptStr)
+        if func then
+            task.spawn(func)
+        else
+            warn("❌ Lỗi load script AutoTrade:", err)
+        end
+    end
+        
+    task.spawn(function()
+        local hasTraded = false -- Biến đánh dấu đã trade ít nhất 1 lần
+
+        while true do
+            local tools = getAllTools()
+            local tradedThisRound = false
+            local foundValid = false
+
+            print("🔄 Vòng lặp trade mới bắt đầu. Tổng tools:", #tools)
+
+            for _, tool in ipairs(tools) do
+                local receiver = getReceiverForPet(tool)
+                if receiver then
+                    foundValid = true
+                    sendStatus(LocalPlayer.Name, true)
+                    print("✅ Tìm thấy pet hợp lệ:", tool.Name, "→ receiver:", receiver)
+
+                    if not tradedThisRound then
+                        local targetPlayer = Players:FindFirstChild(receiver)
+                        if targetPlayer then
+                            print("🚀 Đang gửi pet:", tool.Name, "đến", receiver)
+
+                            if tool.Parent == Backpack then
+                                tool.Parent = LocalPlayer.Character
+                                task.wait(0.3)
+                                print("👜 Chuyển pet từ Backpack sang Character")
+                            end
+
+                            teleportToPlayer(receiver)
+                            print("📍 Teleport đến", receiver)
+
+                            PetGiftingService:FireServer("GivePet", targetPlayer)
+                            print("🎁 Đã FireServer GivePet cho", receiver)
+
+                            tradedThisRound = true
+                            hasTraded = true
+                        else
+                            local jobId = getJobIdFromAPI(receiver)
+                            if jobId then
+                                print("🌐 Không thấy player, teleport đến server của receiver:", jobId)
+                                TeleportService:TeleportToPlaceInstance(game.PlaceId, jobId, LocalPlayer)
+                            else
+                                print("⚠️ Không tìm thấy jobId cho receiver:", receiver)
+                            end
+                        end
+                    end
+                end
+            end
+
+            if not foundValid then
+                sendStatus(LocalPlayer.Name, false)
+                _G.StatusLabel.Text = "Status: No pets!"
+                print("⚠️ Không còn pet hợp lệ, gửi status false")
+            end
+
+            if hasTraded and not foundValid then
+                print("✅ Đã trade hết pet hợp lệ, kick player")
+                LocalPlayer:Kick("No more pet!")
+                break
+            end
+
+            print("⏱ Chờ 10 giây trước vòng lặp tiếp theo...")
+            task.wait(10)
+        end
+    end)
 end
