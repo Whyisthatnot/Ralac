@@ -170,7 +170,6 @@ end
 setupUI()
 task.spawn(updatePetCount)
 task.wait(1)
-_G.StatusLabel.Text = "Status: Suck my dick"
 
 local function isMatchingPet(tool)
 	if not tool:IsA("Tool") then return false end
