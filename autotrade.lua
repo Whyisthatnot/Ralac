@@ -1,9 +1,4 @@
-getgenv().AutoTrade = {
-    ["HannahStr3amRogu3"] = {"Spinosaurus"},
-    ["Script"] = [[
-    ]]
-}
-
+print('hi')
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LocalPlayer = Players.LocalPlayer
