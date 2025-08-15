@@ -348,6 +348,7 @@ if getgenv().AutoTrade[LocalPlayer.Name] then
             return nil
         end
         while true do
+            sendReceive()
             if #Players:GetPlayers() > 4 then
                 local hasActiveReceiver = checkServerForStatusTrue()
                 if hasActiveReceiver then
