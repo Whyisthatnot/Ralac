@@ -2,7 +2,7 @@ setfpscap(2)
 getgenv().config = {
     AutoCollect = true,
     Priority = "BattlePass",
-    RaritySendWebhook = {"Common"},
+    RaritySendWebhook = {"Godly"},
     WebhookUrl = "https://discord.com/api/webhooks/1393310072330784808/BGwp5pK3BJAA0ZV0Zn8mB9JlrKOL93wyqaySYViYUzKRkvygRk0CVpp3utJffXgNwurf",
     UserId = "679141731337240577",
 }
