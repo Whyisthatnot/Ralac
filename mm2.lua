@@ -1,12 +1,3 @@
-setfpscap(2)
-getgenv().config = {
-    AutoCollect = true,
-    Priority = "BattlePass",
-    RaritySendWebhook = {"Godly"},
-    WebhookUrl = "https://discord.com/api/webhooks/1393310072330784808/BGwp5pK3BJAA0ZV0Zn8mB9JlrKOL93wyqaySYViYUzKRkvygRk0CVpp3utJffXgNwurf",
-    UserId = "679141731337240577",
-}
-
 -- Đảm bảo game đã load xong
 if not game:GetService("Players").LocalPlayer then
     game:GetService("Players").PlayerAdded:Wait()
@@ -24,6 +15,9 @@ local TeleportService = game:GetService("TeleportService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+local StarterGui = game:GetService("StarterGui")
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
 
 -- Khai báo biến toàn cục
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
@@ -304,6 +298,25 @@ local function setupUI()
             end
         end)
     end, "Lỗi khi thiết lập UI")
+end
+
+
+-- Ẩn CoreGui (chat, backpack, playerlist...)
+pcall(function()
+	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, false)
+	game:GetService("StarterGui"):SetCore("TopbarEnabled", false)
+end)
+
+-- Ẩn toàn bộ UI của người chơi
+for _, inst in ipairs(playerGui:GetDescendants()) do
+	if inst:IsA("GuiObject") then
+		inst.Visible = false
+	end
+	if inst:IsA("ScreenGui") or inst:IsA("SurfaceGui") or inst:IsA("BillboardGui") then
+		pcall(function()
+			inst.Enabled = false
+		end)
+	end
 end
 
 setupUI()
