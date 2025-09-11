@@ -80,15 +80,7 @@ local function hideUI()
     end
 end
 
-hideMap()
-keepCharacterVisible()
-hideUI()
 
--- Đảm bảo khi respawn nhân vật không bị ẩn
-LocalPlayer.CharacterAdded:Connect(function()
-    task.wait(1)
-    keepCharacterVisible()
-end)
 local startTime = os.clock()
 
 local function setupSimpleUI()
