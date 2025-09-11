@@ -116,7 +116,7 @@ local function setupSimpleUI()
     -- Background che toàn màn hình
     local bgFrame = Instance.new("Frame")
     bgFrame.Size = UDim2.new(1, 0, 1, 0)
-    bgFrame.BackgroundTransparency = 0 -- mờ nhẹ (20%)
+    bgFrame.BackgroundTransparency = 1 -- mờ nhẹ (20%)
     bgFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30) -- xám đậm
     bgFrame.BorderSizePixel = 0
     bgFrame.Parent = screenGui
@@ -499,6 +499,15 @@ task.spawn(function()
         task.wait(0.6)
     end
 end)
+-- Auto loop click
+task.spawn(function()
+    while true do
+        task.wait(0.1) -- 0.1s = 10 click/giây
+        pcall(function()
+            RE_FishingCompleted:FireServer()
+        end)
+    end
+end)
 --== MAIN LOOP (Fishing) ==--
 task.spawn(function()
     while task.wait(0.1) do
@@ -515,20 +524,6 @@ task.spawn(function()
         if not tryCastWithRetry() then 
             task.wait(0.2) 
             continue 
-        end
-        if waitForBite(BITE_TIMEOUT) then
-            if RE_FishingCompleted then
-                RE_FishingCompleted:FireServer(); RE_FishingCompleted:FireServer()
-                RE_FishingCompleted:FireServer(); RE_FishingCompleted:FireServer()
-            end
-            pcall(equipBestBait)
-            pcall(autoFavoriteAll)
-            pcall(BuyBestRod)
-            pcall(buyBestBait)
-            pcall(equipBestBait)
-            pcall(autoFavoriteAll)
-        else
-            task.wait(0.2)
         end
     end
 end)
