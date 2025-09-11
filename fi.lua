@@ -1,28 +1,3 @@
-getgenv().Config = {
-    AutoFish         = true,    -- tự động câu + bán
-    AutoBuyBestRod   = true,    -- tự động mua rod tốt nhất bằng coin
-    AutoBuyBestBait  = true,    -- tự động mua & equip bait tốt nhất bằng coin
-    AutoSellInterval = 60,      -- giây, mỗi lần auto bán túi
-
-    AutoFavorite     = true,    -- bật/tắt auto favorite
-    LockRarities     = { 
-        "Secret" 
-    },
-    WebhookUrl = "https://discord.com/api/webhooks/1393310072330784808/BGwp5pK3BJAA0ZV0Zn8mB9JlrKOL93wyqaySYViYUzKRkvygRk0CVpp3utJffXgNwurf",
-    UserId     = "679141731337240577", -- Discord user ID để ping
-    Webhook = {
-        Rarities = { -- chọn rarity muốn gửi
-            Common    = true,
-            Uncommon  = true,
-            Rare      = true,
-            Epic      = true,
-            Legendary = true,
-            Mythic    = true,
-            Secret    = true,
-        }
-    },
-}
-
 --== Services ==--
 local Players           = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
