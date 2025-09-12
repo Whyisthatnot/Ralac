@@ -79,6 +79,16 @@ local function hideUI()
         end
     end
 end
+
+hideMap()
+keepCharacterVisible()
+hideUI()
+
+-- Đảm bảo khi respawn nhân vật không bị ẩn
+LocalPlayer.CharacterAdded:Connect(function()
+    task.wait(1)
+    keepCharacterVisible()
+end)
 local startTime = os.clock()
 
 local function setupSimpleUI()
@@ -106,7 +116,7 @@ local function setupSimpleUI()
     -- Background che toàn màn hình
     local bgFrame = Instance.new("Frame")
     bgFrame.Size = UDim2.new(1, 0, 1, 0)
-    bgFrame.BackgroundTransparency = 0 -- mờ nhẹ (20%)
+    bgFrame.BackgroundTransparency = 1 -- mờ nhẹ (20%)
     bgFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30) -- xám đậm
     bgFrame.BorderSizePixel = 0
     bgFrame.Parent = screenGui
@@ -498,6 +508,20 @@ task.spawn(function()
         end)
     end
 end)
+--// Auto Click Minigame Only
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local FishingController = require(ReplicatedStorage.Controllers.FishingController)
+
+-- loop click liên tục
+task.spawn(function()
+    while task.wait(0.01) do
+        if FishingController:GetCurrentGUID() then
+            FishingController:RequestFishingMinigameClick()
+        end
+    end
+end)
+
 --== MAIN LOOP (Fishing) ==--
 task.spawn(function()
     while task.wait(0.1) do
