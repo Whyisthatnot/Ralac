@@ -532,7 +532,7 @@ stopAllAnimations()
 
 -- Nếu muốn auto xoá liên tục (anti animation spam):
 task.spawn(function()
-    while task.wait(0.1) do
+    while task.wait(0.5) do
         stopAllAnimations()
     end
 end)
