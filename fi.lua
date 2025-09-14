@@ -116,7 +116,7 @@ local function setupSimpleUI()
     -- Background che toàn màn hình
     local bgFrame = Instance.new("Frame")
     bgFrame.Size = UDim2.new(1, 0, 1, 0)
-    bgFrame.BackgroundTransparency = 1 -- mờ nhẹ (20%)
+    bgFrame.BackgroundTransparency =  0 --- mờ nhẹ (20%)
     bgFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30) -- xám đậm
     bgFrame.BorderSizePixel = 0
     bgFrame.Parent = screenGui
