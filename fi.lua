@@ -502,7 +502,7 @@ end)
 -- Auto loop click
 task.spawn(function()
     while true do
-        task.wait(0.1) -- 0.1s = 10 click/giây
+        task.wait(1) -- 0.1s = 10 click/giây
         pcall(function()
             RE_FishingCompleted:FireServer()
         end)
