@@ -35,8 +35,8 @@ local miniGameRemote = NetRoot:WaitForChild("RF/RequestFishingMinigameStarted")
 local Data = Replion:WaitReplion("Data")
 
 --== Fishing constants ==--
-local TARGET_POS  = Vector3.new(-61.54, 3.53, 2768.44)
-local TARGET_LOOK = Vector3.new(-0.794, 0, -0.608).Unit
+local TARGET_POS  = Vector3.new(-66.76, 1.80, 2806.97)
+local TARGET_LOOK = Vector3.new(-0.741, -0.000, -0.672).Unit
 local POS_TOLERANCE = 3
 local DIR_TOL_DEG   = 15
 local HOTBAR_SLOT   = 1
@@ -116,7 +116,7 @@ local function setupSimpleUI()
     -- Background che toàn màn hình
     local bgFrame = Instance.new("Frame")
     bgFrame.Size = UDim2.new(1, 0, 1, 0)
-    bgFrame.BackgroundTransparency = 0 -- mờ nhẹ (20%)
+    bgFrame.BackgroundTransparency = 1 -- mờ nhẹ (20%)
     bgFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30) -- xám đậm
     bgFrame.BorderSizePixel = 0
     bgFrame.Parent = screenGui
@@ -505,20 +505,49 @@ task.spawn(function()
         pcall(function()
             RE_FishingCompleted:FireServer()
         end)
-        task.wait(1) -- 0.1s = 10 click/giây
+        task.wait(0.1)
     end
 end)
 --// Auto Click Minigame Only
+local Players = game:GetService("Players")
+local lp = Players.LocalPlayer
+
+local function stopAllAnimations()
+    local char = lp.Character or lp.CharacterAdded:Wait()
+    local humanoid = char:FindFirstChildWhichIsA("Humanoid")
+    if not humanoid then return end
+
+    local animator = humanoid:FindFirstChildWhichIsA("Animator")
+    if not animator then return end
+
+    -- Lấy tất cả animation track đang chạy
+    for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
+        track:Stop()
+        track:Destroy()
+    end
+end
+
+-- Gọi 1 lần để xoá hết
+stopAllAnimations()
+
+-- Nếu muốn auto xoá liên tục (anti animation spam):
+task.spawn(function()
+    while task.wait(0.1) do
+        stopAllAnimations()
+    end
+end)
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local FishingController = require(ReplicatedStorage.Controllers.FishingController)
 
 -- loop click liên tục
 task.spawn(function()
-    while task.wait(0.01) do
+    while true do
         if FishingController:GetCurrentGUID() then
             FishingController:RequestFishingMinigameClick()
+            task.wait(1)
         end
+        task.wait(1)
     end
 end)
 
