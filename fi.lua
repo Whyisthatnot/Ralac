@@ -502,10 +502,10 @@ end)
 -- Auto loop click
 task.spawn(function()
     while true do
-        task.wait(1) -- 0.1s = 10 click/giây
         pcall(function()
             RE_FishingCompleted:FireServer()
         end)
+        task.wait(1) -- 0.1s = 10 click/giây
     end
 end)
 --// Auto Click Minigame Only
