@@ -45,32 +45,59 @@ local POST_EQUIP_CAST_DELAY  = 0.05
 local BITE_TIMEOUT           = 1
 local CHECK_INTERVAL         = 0.02
 local RETRY_CASTS            = 2
---// LocalScript (StarterPlayerScripts)
--- FPS Boost: Hide map + Hide UI
+--// FPS Booster Script (Giảm đồ họa)
+-- Đặt trong StarterPlayerScripts để auto chạy
 
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
+local Lighting = game:GetService("Lighting")
 
-local function hideMap()
-    for _, obj in ipairs(workspace:GetDescendants()) do
-        if obj:IsA("BasePart") then
-            obj.LocalTransparencyModifier = 1
-        elseif obj:IsA("Decal") or obj:IsA("Texture") then
-            obj.Transparency = 1
-        elseif obj:IsA("ParticleEmitter") or obj:IsA("Beam") or obj:IsA("Trail") then
-            obj.Enabled = false
-        end
+-- Giảm chất lượng render
+settings().Rendering.QualityLevel = Enum.QualityLevel.Level01 -- thấp nhất
+
+-- Tắt bóng và công nghệ ánh sáng nặng
+Lighting.GlobalShadows = false
+Lighting.FogEnd = 9e9
+Lighting.Brightness = 1
+pcall(function() Lighting.Technology = Enum.Technology.Compatibility end)
+
+-- Xóa hiệu ứng nặng trong Lighting
+for _, v in pairs(Lighting:GetChildren()) do
+    if v:IsA("BlurEffect") or v:IsA("SunRaysEffect") or v:IsA("ColorCorrectionEffect")
+    or v:IsA("BloomEffect") or v:IsA("DepthOfFieldEffect") then
+        v:Destroy()
     end
 end
 
-local function keepCharacterVisible()
-    if not LocalPlayer.Character then return end
-    for _, part in ipairs(LocalPlayer.Character:GetDescendants()) do
-        if part:IsA("BasePart") then
-            part.LocalTransparencyModifier = 0
-        end
+-- Xóa texture/màu của part để giảm lag
+for _, v in pairs(workspace:GetDescendants()) do
+    if v:IsA("Part") or v:IsA("UnionOperation") or v:IsA("MeshPart") then
+        v.Material = Enum.Material.SmoothPlastic
+        v.Reflectance = 0
+    elseif v:IsA("Decal") or v:IsA("Texture") then
+        v:Destroy()
     end
 end
+
+-- Ẩn cây/cỏ Terrain
+workspace.Terrain.WaterReflectance = 0
+workspace.Terrain.WaterTransparency = 1
+workspace.Terrain.WaterWaveSize = 0
+workspace.Terrain.WaterWaveSpeed = 0
+
+-- Tắt hiệu ứng particle
+for _, v in pairs(workspace:GetDescendants()) do
+    if v:IsA("ParticleEmitter") or v:IsA("Trail") then
+        v.Enabled = false
+    end
+end
+
+-- Tắt mesh LOD xa (giữ low poly)
+for _, v in pairs(workspace:GetDescendants()) do
+    if v:IsA("MeshPart") then
+        v.RenderFidelity = Enum.RenderFidelity.Performance
+    end
+end
+
+print("✅ FPS Booster Activated - Graphics Reduced")
 
 local function hideUI()
     for _, gui in ipairs(LocalPlayer.PlayerGui:GetChildren()) do
@@ -79,16 +106,7 @@ local function hideUI()
         end
     end
 end
-
-hideMap()
-keepCharacterVisible()
 hideUI()
-
--- Đảm bảo khi respawn nhân vật không bị ẩn
-LocalPlayer.CharacterAdded:Connect(function()
-    task.wait(1)
-    keepCharacterVisible()
-end)
 local startTime = os.clock()
 
 local function setupSimpleUI()
@@ -116,7 +134,7 @@ local function setupSimpleUI()
     -- Background che toàn màn hình
     local bgFrame = Instance.new("Frame")
     bgFrame.Size = UDim2.new(1, 0, 1, 0)
-    bgFrame.BackgroundTransparency =  0 --- mờ nhẹ (20%)
+    bgFrame.BackgroundTransparency = 1 -- mờ nhẹ (20%)
     bgFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30) -- xám đậm
     bgFrame.BorderSizePixel = 0
     bgFrame.Parent = screenGui
@@ -532,7 +550,7 @@ stopAllAnimations()
 
 -- Nếu muốn auto xoá liên tục (anti animation spam):
 task.spawn(function()
-    while task.wait(0.5) do
+    while task.wait(0.1) do
         stopAllAnimations()
     end
 end)
