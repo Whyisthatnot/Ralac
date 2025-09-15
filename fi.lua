@@ -69,6 +69,7 @@ end
 
 -- Xóa texture/màu của part để giảm lag
 for _, v in pairs(workspace:GetDescendants()) do
+    task.wait(0.01) -- không làm 1 phát all
     if v:IsA("Part") or v:IsA("UnionOperation") or v:IsA("MeshPart") then
         v.Material = Enum.Material.SmoothPlastic
         v.Reflectance = 0
@@ -137,7 +138,7 @@ local function setupSimpleUI()
     bgFrame.Size = UDim2.new(1, 0, 1, 0)
     bgFrame.BackgroundTransparency = 1 -- mờ nhẹ (20%)
     bgFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30) -- xám đậm
-    bgFrame.BorderSizePixel = 1
+    bgFrame.BorderSizePixel = 0
     bgFrame.Parent = screenGui
 
     -- Layout căn giữa
@@ -518,15 +519,7 @@ task.spawn(function()
         task.wait(0.6)
     end
 end)
--- Auto loop click
-task.spawn(function()
-    while true do
-        pcall(function()
-            RE_FishingCompleted:FireServer()
-        end)
-        task.wait(0.1)
-    end
-end)
+
 --// Auto Click Minigame Only
 local Players = game:GetService("Players")
 local lp = Players.LocalPlayer
@@ -564,6 +557,10 @@ task.spawn(function()
     while true do
         if FishingController:GetCurrentGUID() then
             FishingController:RequestFishingMinigameClick()
+            for i = 1,10 do 
+                RE_FishingCompleted:FireServer()
+                task.wait(0.1)
+            end
             task.wait(1)
         end
         task.wait(1)
@@ -574,7 +571,8 @@ end)
 task.spawn(function()
     while task.wait(0.1) do
         if not Config.AutoFish then continue end
-
+        buyBestBait()
+        BuyBestRod()
         if not isAtSpot() then
             teleportToSpot()
             task.wait(0.2) -- 🔥 Delay 1s sau khi tele rồi mới cast
