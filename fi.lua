@@ -67,17 +67,6 @@ for _, v in pairs(Lighting:GetChildren()) do
     end
 end
 
--- Xóa texture/màu của part để giảm lag
-for _, v in pairs(workspace:GetDescendants()) do
-    if v:IsA("Part") or v:IsA("UnionOperation") or v:IsA("MeshPart") then
-        v.Material = Enum.Material.SmoothPlastic
-        v.Reflectance = 0
-        v.Color = Color3.fromRGB(200, 200, 200) -- xám nhạt
-    elseif v:IsA("Decal") or v:IsA("Texture") then
-        v:Destroy()
-
-    end
-end
 
 -- Ẩn cây/cỏ Terrain
 workspace.Terrain.WaterReflectance = 0
