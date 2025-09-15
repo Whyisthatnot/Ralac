@@ -35,8 +35,8 @@ local miniGameRemote = NetRoot:WaitForChild("RF/RequestFishingMinigameStarted")
 local Data = Replion:WaitReplion("Data")
 
 --== Fishing constants ==--
-local TARGET_POS  = Vector3.new(-66.76, 1.80, 2806.97)
-local TARGET_LOOK = Vector3.new(-0.741, -0.000, -0.672).Unit
+local TARGET_POS  = Vector3.new(59.07, 4.89, 2768.55)
+local TARGET_LOOK = Vector3.new(0.10, -0.26, -0.96).Unit
 local POS_TOLERANCE = 3
 local DIR_TOL_DEG   = 15
 local HOTBAR_SLOT   = 1
@@ -66,6 +66,20 @@ for _, v in pairs(Lighting:GetChildren()) do
         v:Destroy()
     end
 end
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+-- Bật POV (First Person)
+local function enablePOV()
+    Camera.CameraSubject = player.Character:WaitForChild("Humanoid")
+    Camera.CameraType = Enum.CameraType.Custom
+    player.CameraMode = Enum.CameraMode.LockFirstPerson
+    Camera.FieldOfView = 70 -- bạn chỉnh FOV tuỳ ý, nhỏ thì zoom
+end
+
+-- Gọi thẳng enablePOV() để bật POV
+enablePOV()
 
 
 -- Ẩn cây/cỏ Terrain
