@@ -420,6 +420,7 @@ local function teleportToSpot()
         if serverId then
             print("Đang teleport sang server có ≤ 1 người...")
             TeleportService:TeleportToPlaceInstance(PLACE_ID, serverId, Players.LocalPlayer)
+        end
         return
     end
 
@@ -654,6 +655,7 @@ end
 
 -- Gọi 1 lần để xoá hết
 stopAllAnimations()
+
 local Players = game:GetService("Players")
 local Camera = workspace.CurrentCamera
 
@@ -664,7 +666,7 @@ local hrp = char:WaitForChild("HumanoidRootPart")
 -- Đặt camera nhìn từ trên cao (50 stud)
 local function SetTopDownCam()
     Camera.CameraType = Enum.CameraType.Scriptable
-    Camera.CFrame = CFrame.new(hrp.Position + Vector3.new(0, 300, 0), hrp.Position)
+    Camera.CFrame = CFrame.new(hrp.Position + Vector3.new(0, 150, 0), hrp.Position)
 end
 
 -- Gọi 1 lần
