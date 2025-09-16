@@ -35,8 +35,8 @@ local miniGameRemote = NetRoot:WaitForChild("RF/RequestFishingMinigameStarted")
 local Data = Replion:WaitReplion("Data")
 
 --== Fishing constants ==--
-local TARGET_POS  = Vector3.new(59.07, 4.89, 2768.55)
-local TARGET_LOOK = Vector3.new(0.10, -0.26, -0.96).Unit
+local TARGET_POS  = Vector3.new(-1372.34, 5.25, 4072.17)
+local TARGET_LOOK = Vector3.new(1.00, -0.00, 0.02).Unit
 local POS_TOLERANCE = 3
 local DIR_TOL_DEG   = 15
 local HOTBAR_SLOT   = 1
@@ -66,20 +66,6 @@ for _, v in pairs(Lighting:GetChildren()) do
         v:Destroy()
     end
 end
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
-local Camera = workspace.CurrentCamera
-
--- Bật POV (First Person)
-local function enablePOV()
-    Camera.CameraSubject = player.Character:WaitForChild("Humanoid")
-    Camera.CameraType = Enum.CameraType.Custom
-    player.CameraMode = Enum.CameraMode.LockFirstPerson
-    Camera.FieldOfView = 70 -- bạn chỉnh FOV tuỳ ý, nhỏ thì zoom
-end
-
--- Gọi thẳng enablePOV() để bật POV
-enablePOV()
 
 
 -- Ẩn cây/cỏ Terrain
@@ -140,7 +126,7 @@ local function setupSimpleUI()
     -- Background che toàn màn hình
     local bgFrame = Instance.new("Frame")
     bgFrame.Size = UDim2.new(1, 0, 1, 0)
-    bgFrame.BackgroundTransparency = 0 -- mờ nhẹ (20%)
+    bgFrame.BackgroundTransparency = 1 -- mờ nhẹ (20%)
     bgFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30) -- xám đậm
     bgFrame.BorderSizePixel = 0
     bgFrame.Parent = screenGui
@@ -348,19 +334,111 @@ local function ensureRodEquipped()
     end
     return true
 end
+-- 🔍 Tìm object Megalodon Hunt trong Props
+local function findMegalodonHunt()
+    for _, obj in ipairs(workspace:GetChildren()) do
+        if obj.Name == "Props" then
+            local meg = obj:FindFirstChild("Megalodon Hunt")
+            if meg then
+                return meg
+            end
+        end
+    end
+    return nil
+end
+local TeleportService = game:GetService("TeleportService")
+local Players = game:GetService("Players")
+
+local PLACE_ID = game.PlaceId -- ID game
+local API_URL = "https://games.roblox.com/v1/games/" .. PLACE_ID .. "/servers/Public?sortOrder=Asc&limit=100"
+
+-- Lấy hàm HTTP request của executor
+local request = (syn and syn.request) or http_request or (fluxus and fluxus.request)
+
+if not request then
+    warn("Executor không hỗ trợ HTTP request!")
+    return
+end
+
+-- Hàm tìm server
+local function FindServer(maxPlayers)
+    local response = request({
+        Url = API_URL,
+        Method = "GET"
+    })
+
+    if not response or not response.Body then
+        warn("Không thể lấy dữ liệu server.")
+        return nil
+    end
+
+    local success, data = pcall(function()
+        return game:GetService("HttpService"):JSONDecode(response.Body)
+    end)
+
+    if not success or not data or not data.data then
+        warn("Lỗi parse JSON.")
+        return nil
+    end
+
+    for _, server in ipairs(data.data) do
+        if server.playing <= maxPlayers and server.id ~= game.JobId then
+            return server.id
+        end
+    end
+
+    return nil
+end
+
+
+
+-- ✅ Kiểm tra đã đứng gần Megalodon Hunt chưa
 local function isAtSpot()
     local hrp = getHRP()
-    local posOk = (hrp.Position - TARGET_POS).Magnitude <= POS_TOLERANCE
-    local cur = Vector3.new(hrp.CFrame.LookVector.X, 0, hrp.CFrame.LookVector.Z).Unit
-    local dot = math.clamp(cur:Dot(TARGET_LOOK), -1, 1)
-    local ang = math.deg(math.acos(dot))
-    return posOk and ang <= DIR_TOL_DEG
+    local MegalodonHunt = findMegalodonHunt()
+    if not MegalodonHunt then return false end
+
+    local targetPos
+    if MegalodonHunt:IsA("Model") then
+        local part = MegalodonHunt.PrimaryPart or MegalodonHunt:FindFirstChildWhichIsA("BasePart", true)
+        if part then targetPos = part.Position end
+    elseif MegalodonHunt:IsA("BasePart") then
+        targetPos = MegalodonHunt.Position
+    end
+
+    if not targetPos then return false end
+    return (hrp.Position - targetPos).Magnitude <= 10 -- trong bán kính 5 stud
 end
+
+-- ✅ Teleport tới Megalodon Hunt
 local function teleportToSpot()
     local hrp = getHRP()
-    local pos = TARGET_POS + Vector3.new(0, 2.5, 0)
-    hrp.CFrame = CFrame.new(pos, pos + TARGET_LOOK)
+    local MegalodonHunt = findMegalodonHunt()
+    if not MegalodonHunt then
+        warn("⚠️ Không tìm thấy Megalodon Hunt")
+        local serverId = FindServer(1) -- tìm server có ≤ 1 người
+        if serverId then
+            print("Đang teleport sang server có ≤ 1 người...")
+            TeleportService:TeleportToPlaceInstance(PLACE_ID, serverId, Players.LocalPlayer)
+        return
+    end
+
+    local targetPos
+    if MegalodonHunt:IsA("Model") then
+        local part = MegalodonHunt.PrimaryPart or MegalodonHunt:FindFirstChildWhichIsA("BasePart", true)
+        if part then targetPos = part.Position end
+    elseif MegalodonHunt:IsA("BasePart") then
+        targetPos = MegalodonHunt.Position
+    end
+
+    if targetPos then
+        hrp.CFrame = CFrame.new(targetPos + Vector3.new(0, 5, 0))
+    end
 end
+
+
+-- Gọi function để tele
+
 local function getCooldown()
     if hasMethod(FishingController,"OnCooldown") then
         local ok,cd=pcall(function() return FishingController:OnCooldown() end)
@@ -471,6 +549,37 @@ local function equipBestBait()
     return false
 end
 
+function EquipBestRod()
+    local inv = Data:GetExpect({"Inventory","Fishing Rods"}) or {}
+    local bestEntry, bestData, bestScore
+
+    for _, entry in ipairs(inv) do
+        local data = ItemUtility:GetItemData(entry.Id)
+        if data then
+            local maxW  = tonumber(data.MaxWeight) or 0
+            local click = tonumber(data.ClickPower) or 0
+            local luck  = (data.RollData and tonumber(data.RollData.BaseLuck)) or 0
+            local tier  = 0
+            if data.Data and data.Data.Tier then
+                local td = TierUtility:GetTier(data.Data.Tier)
+                if td then tier = td.Order or td.Rank or 0 end
+            end
+            local score = maxW * 1e6 + click * 1e4 + tier * 1e2 + luck
+            if not bestScore or score > bestScore then
+                bestScore, bestEntry, bestData = score, entry, data
+            end
+        end
+    end
+
+    if not bestEntry or not bestData then return false end
+    if bestEntry.UUID then
+        EquipItem:FireServer(bestEntry.UUID, "Fishing Rods")
+    end
+    EquipItem:FireServer(bestEntry.Id, "Fishing Rods")
+    return true
+end
+
+
 --== Favorite ==--
 local function shouldLock(rarity)
     for _, r in ipairs(Config.LockRarities or {}) do
@@ -545,7 +654,21 @@ end
 
 -- Gọi 1 lần để xoá hết
 stopAllAnimations()
+local Players = game:GetService("Players")
+local Camera = workspace.CurrentCamera
 
+local player = Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local hrp = char:WaitForChild("HumanoidRootPart")
+
+-- Đặt camera nhìn từ trên cao (50 stud)
+local function SetTopDownCam()
+    Camera.CameraType = Enum.CameraType.Scriptable
+    Camera.CFrame = CFrame.new(hrp.Position + Vector3.new(0, 300, 0), hrp.Position)
+end
+
+-- Gọi 1 lần
+SetTopDownCam()
 -- Nếu muốn auto xoá liên tục (anti animation spam):
 task.spawn(function()
     while task.wait(0.1) do
@@ -577,13 +700,14 @@ task.spawn(function()
         if not Config.AutoFish then continue end
         buyBestBait()
         BuyBestRod()
+        EquipBestRod()
         if not isAtSpot() then
             teleportToSpot()
-            task.wait(0.2) -- 🔥 Delay 1s sau khi tele rồi mới cast
+            task.wait(0.2) -- delay nhỏ để ổn định trước khi cast
         end
-
         ensureRodEquipped()
         pcall(equipBestBait) -- equip trước khi cast
+
 
         if not tryCastWithRetry() then 
             task.wait(0.2) 
