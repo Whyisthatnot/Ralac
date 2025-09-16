@@ -254,66 +254,99 @@ local ItemUtility = require(ReplicatedStorage.Shared.ItemUtility)
 local TierUtility = require(ReplicatedStorage.Shared.TierUtility)
 local Net = require(ReplicatedStorage.Packages.Net)
 local RE_FishCaught = Net:RemoteEvent("FishCaught")
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local HttpService = game:GetService("HttpService")
 
---== Webhook sender ==--
+local Replion = require(ReplicatedStorage.Packages.Replion).Client
+local ItemUtility = require(ReplicatedStorage.Shared.ItemUtility)
+local TierUtility = require(ReplicatedStorage.Shared.TierUtility)
+
+local Data = Replion:WaitReplion("Data")
+
+-- Bảng cache lưu cá đã có
+local cachedFish = {}
+
+-- Hàm build danh sách cá
+local function snapshotInventory()
+    local items = Data:GetExpect({"Inventory","Items"}) or {}
+    local snapshot = {}
+    for _, entry in ipairs(items) do
+        local data = ItemUtility.GetItemDataFromItemType("Items", entry.Id)
+        if data and data.Data.Type == "Fishes" then
+            snapshot[entry.UUID] = true
+        end
+    end
+    return snapshot
+end
+
+-- Lấy rarity an toàn
+local function getRarityName(entry)
+    local data = ItemUtility.GetItemDataFromItemType("Items", entry.Id)
+    if not data then return "Unknown", nil end
+    local tierId = data.Data.Tier
+    local tierData = tierId and TierUtility:GetTier(tierId)
+    return (tierData and tierData.Name) or "Unknown", data.Data.Name
+end
+
+-- Gửi webhook
 local function sendFishWebhook(fishName, rarityName, username)
-    --== Remotes ==--
-    local rarityNum = RarityMap[rarityName] or 0
     if not getgenv().Config.Webhook.Rarities[rarityName] then return end
 
-    local hatchFormatted = string.format("<t:%d:R>", os.time())
-    local mention = "<@" .. tostring(getgenv().Config.UserId) .. ">"
-
     local payload = {
-        content = mention,
+        content = "<@" .. tostring(getgenv().Config.UserId) .. ">",
         embeds = {{
             title = "🎣 New Fish Caught!",
-            description = string.format("**%s** vừa bắt được: **%s**", username or "Unknown", fishName or "Unknown"),
+            description = string.format("**%s** vừa bắt được: **%s**", username, fishName),
             color = 0x00BFFF,
             fields = {
                 { name = "⭐ Rarity", value = rarityName, inline = true },
-                { name = "⏰ Time", value = hatchFormatted, inline = true }
-            },
-            footer = { text = "discord.gg/chings" }
+                { name = "⏰ Time", value = string.format("<t:%d:R>", os.time()), inline = true }
+            }
         }}
     }
 
     local req = (syn and syn.request) or request or http_request
     if req then
-        local success, result = pcall(function()
-            return req({
+        pcall(function()
+            req({
                 Url = getgenv().Config.WebhookUrl,
                 Method = "POST",
                 Headers = { ["Content-Type"] = "application/json" },
                 Body = HttpService:JSONEncode(payload)
             })
         end)
-        if success then
-            print("✅ Webhook sent:", fishName, "rarity:", rarityName, rarityNum)
-        else
-            warn("❌ Webhook error:", result)
-        end
-    else
-        warn("❌ Executor does not support webhook request.")
     end
 end
+
+-- Init: snapshot lần đầu
+cachedFish = snapshotInventory()
+
+-- Vòng lặp kiểm tra cá mới
 task.spawn(function()
-    --== Hook FishCaught ==--
-    RE_FishCaught.OnClientEvent:Connect(function(fishId)
-        local player = Players.LocalPlayer
-        local itemData = ItemUtility:GetItemData(fishId)
-        if not itemData or itemData.Data.Type ~= "Fishes" then return end
+    while task.wait(3) do -- mỗi 3s check
+        local items = Data:GetExpect({"Inventory","Items"}) or {}
+        for _, entry in ipairs(items) do
+    if not cachedFish[entry.UUID] then
+        local data = ItemUtility.GetItemDataFromItemType("Items", entry.Id)
+        if data and data.Data.Type == "Fishes" then  -- 👈 CHỈ lấy cá
+            local tierId = data.Data.Tier
+            local tierData = tierId and TierUtility:GetTier(tierId)
+            local rarity = (tierData and tierData.Name) or "Unknown"
+            local fishName = data.Data.Name or "Unknown"
 
-        local tierId = itemData.Data.Tier
-        local tierData = tierId and TierUtility:GetTier(tierId)
-        local rarity = tierData and tierData.Name or "Unknown"
-        local fishName = itemData.Data.Name or "Unknown"
+            if getgenv().Config.Webhook.Rarities[rarity] then
+                print("🐟 Cá mới:", fishName, "Rarity:", rarity)
+                sendFishWebhook(fishName, rarity, Players.LocalPlayer.Name)
+            end
+        end
+        cachedFish[entry.UUID] = true -- lưu lại kể cả item khác để tránh spam
+    end
+end
 
-        print("🐟 Bắt được cá:", fishName, "Rarity:", rarity)
-
-        sendFishWebhook(fishName, rarity, player.Name)
-    end)
+    end
 end)
+
 -- Gọi function
 setupSimpleUI()
 
@@ -434,6 +467,7 @@ local function teleportToSpot()
 
     if targetPos then
         hrp.CFrame = CFrame.new(targetPos + Vector3.new(0, 5, 0))
+        print('telemega')
     end
 end
 
@@ -608,7 +642,6 @@ local function autoFavoriteAll()
     end
 end
 
--- auto-fav khi câu được cá mới
 if Config.AutoFavorite then
     Data:OnArrayInsert({"Inventory","Items"}, function(_, newEntry)
         local itemData = ItemUtility.GetItemDataFromItemType("Items", newEntry.Id)
@@ -670,7 +703,6 @@ local function SetTopDownCam()
 end
 
 -- Gọi 1 lần
-SetTopDownCam()
 -- Nếu muốn auto xoá liên tục (anti animation spam):
 task.spawn(function()
     while task.wait(0.1) do
@@ -700,6 +732,7 @@ end)
 task.spawn(function()
     while task.wait(0.1) do
         if not Config.AutoFish then continue end
+        autoFavoriteAll()
         buyBestBait()
         BuyBestRod()
         EquipBestRod()
@@ -709,7 +742,7 @@ task.spawn(function()
         end
         ensureRodEquipped()
         pcall(equipBestBait) -- equip trước khi cast
-
+        SetTopDownCam()
 
         if not tryCastWithRetry() then 
             task.wait(0.2) 
